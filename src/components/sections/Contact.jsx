@@ -7,10 +7,8 @@ import useTextDisplacement from '../../hooks/useTextDisplacement'
 gsap.registerPlugin(ScrollTrigger)
 
 const SOCIALS = [
-  { label: 'GitHub', href: 'https://github.com' },
-  { label: 'LinkedIn', href: 'https://linkedin.com' },
-  { label: 'Twitter', href: 'https://twitter.com' },
-  { label: 'Dribbble', href: 'https://dribbble.com' },
+  { label: 'GitHub', href: 'https://github.com/KalyankumarKonduru' },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/kalyankumarkonduru' },
 ]
 
 export default function Contact() {
@@ -93,15 +91,15 @@ export default function Contact() {
 
         <div ref={contentRef} className="max-w-md space-y-8">
           <p className="font-body text-white/30 text-base leading-relaxed">
-            Have a project in mind, a role to discuss, or just want to connect
-            about ambitious ideas? I&apos;m always open.
+            Have a role to discuss, a project to collaborate on, or an ambitious
+            idea worth building? I&apos;m always open to connecting.
           </p>
 
           <MagneticButton
             className="group inline-flex items-center gap-4 px-8 py-4 rounded-full border border-accent/30 hover:border-accent/60 hover:bg-accent/5 text-accent font-display font-medium text-sm tracking-wide transition-all duration-500"
-            onClick={() => { window.location.href = 'mailto:hello@yourname.com' }}
+            onClick={() => { window.location.href = 'mailto:konduru.kalyan555@gmail.com' }}
           >
-            hello@yourname.com
+            konduru.kalyan555@gmail.com
             <svg
               className="w-3 h-3 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
               fill="none"

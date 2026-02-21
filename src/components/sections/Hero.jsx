@@ -81,7 +81,7 @@ export default function Hero({ ready }) {
             className="font-display font-bold leading-[0.88] tracking-[-0.04em] text-white"
             style={{ fontSize: 'clamp(3.5rem, 12vw, 12rem)' }}
           >
-            {renderChars('Your')}
+            {renderChars('Kalyan')}
           </h1>
         </div>
 
@@ -90,7 +90,7 @@ export default function Hero({ ready }) {
             className="font-display font-bold leading-[0.88] tracking-[-0.04em] text-white/20"
             style={{ fontSize: 'clamp(3.5rem, 12vw, 12rem)' }}
           >
-            {renderChars('Name')}
+            {renderChars('Konduru')}
           </h1>
         </div>
 
@@ -98,16 +98,16 @@ export default function Hero({ ready }) {
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-accent" />
             <span className="font-body text-sm text-white/30 tracking-wide">
-              Creative Developer
+              Full-Stack Software Engineer
             </span>
           </div>
           <div className="hidden md:block w-px h-4 bg-white/10" />
           <span className="font-body text-sm text-white/30 tracking-wide">
-            Based in Your City
+            Raleigh, NC
           </span>
           <div className="hidden md:block w-px h-4 bg-white/10" />
           <span className="font-body text-sm text-white/20 tracking-wide">
-            Available for projects &mdash; 2026
+            Open to opportunities &mdash; 2026
           </span>
         </div>
       </div>

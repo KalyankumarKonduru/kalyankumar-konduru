@@ -8,32 +8,32 @@ gsap.registerPlugin(ScrollTrigger)
 
 const PROJECTS = [
   {
-    title: 'Neural Canvas',
-    category: 'AI / Creative Tool',
-    description: 'Real-time AI art generation platform with WebGL visualization pipeline. Sub-100ms inference.',
-    tags: ['React', 'Three.js', 'Python', 'WebGL'],
+    title: 'Polaris',
+    category: 'Infrastructure / DevOps',
+    description: 'A custom Kubernetes autoscaler written in Go that consumes live Prometheus metrics to drive real-time pod scaling across production GCP clusters — cutting infrastructure costs by 40% through automated resource right-sizing.',
+    tags: ['Go', 'Kubernetes', 'Terraform', 'Prometheus', 'GCP'],
     year: '2025',
   },
   {
-    title: 'Pulse Analytics',
-    category: 'Data / Dashboard',
-    description: 'High-performance dashboard processing 10M+ events/day with streaming architecture.',
-    tags: ['TypeScript', 'D3.js', 'Go', 'PostgreSQL'],
+    title: 'GraphQL Product Search',
+    category: 'Full-Stack / API',
+    description: 'Production-grade search platform with a Go backend (gqlgen) and React/TypeScript frontend — featuring cursor-based pagination, real-time filtering, autocomplete, and Redis caching that reduced DB roundtrips by 60%.',
+    tags: ['Go', 'GraphQL', 'React', 'TypeScript', 'Redis'],
+    year: '2025',
+  },
+  {
+    title: 'NextJS Storefront',
+    category: 'E-Commerce / Frontend',
+    description: 'A blazing-fast e-commerce storefront built on Next.js 14 with SSR/ISR, Redux Toolkit, and comprehensive Jest testing — deployed on Vercel with a 98.5 Lighthouse score across all audits.',
+    tags: ['Next.js', 'TypeScript', 'Redux', 'Jest', 'Vercel'],
     year: '2024',
   },
   {
-    title: 'Mesh Protocol',
-    category: 'Infrastructure',
-    description: 'Decentralized communication layer with E2E encryption. 50k concurrent connections.',
-    tags: ['Rust', 'WebRTC', 'React', 'Node.js'],
+    title: 'Accessible UI Library',
+    category: 'Design System / OSS',
+    description: 'A reusable React component library engineered for WCAG 2.1 AA compliance — with focus trapping, keyboard navigation, ARIA support, and type-safe variant APIs documented in Storybook 7.',
+    tags: ['React', 'TypeScript', 'Tailwind', 'Storybook', 'a11y'],
     year: '2024',
-  },
-  {
-    title: 'Spatial Editor',
-    category: 'Creative Tool / 3D',
-    description: 'Browser-based 3D modeling tool with collaborative editing and procedural generation.',
-    tags: ['Three.js', 'WASM', 'React', 'WebWorkers'],
-    year: '2023',
   },
 ]
 

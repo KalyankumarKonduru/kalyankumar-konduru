@@ -3,6 +3,7 @@ import gsap from 'gsap'
 
 const NAV_LINKS = [
   { label: 'About', href: '#about' },
+  { label: 'Experience', href: '#experience' },
   { label: 'Work', href: '#projects' },
   { label: 'Contact', href: '#contact' },
 ]
@@ -56,7 +57,7 @@ export default function Navbar() {
         className="nav-item font-display font-bold text-sm tracking-tight text-white/80 hover:text-white transition-colors duration-300"
         data-cursor-hover
       >
-        Portfolio<span className="text-accent">.</span>
+        Kalyan<span className="text-accent">.</span>
       </a>
 
       <div className="hidden md:flex items-center gap-10">

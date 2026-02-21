@@ -53,7 +53,7 @@ export default function About() {
               as="h2"
               className="font-display text-3xl md:text-[2.75rem] font-bold leading-[1.15] text-white/90 tracking-[-0.02em]"
             >
-              I build digital experiences that merge technical precision with creative vision.
+              I engineer systems that scale and interfaces that feel alive.
             </TextReveal>
 
             <TextReveal
@@ -61,7 +61,7 @@ export default function About() {
               className="font-body text-white/30 text-base md:text-lg leading-[1.85]"
               delay={0.15}
             >
-              With deep expertise in full-stack development and a passion for pushing the boundaries of what the web can do, I create interfaces that are as performant as they are beautiful. Every animation is intentional. Every interaction is considered.
+              I&apos;m a full-stack software engineer with a Master&apos;s in Computer Science from Purdue University and 4+ years of professional experience shipping production software. My work lives at the intersection of robust backend architecture and polished, high-performance frontends — from designing Go-based Kubernetes autoscalers that slashed infrastructure costs by 40%, to crafting React interfaces that load 75% faster through surgical state management.
             </TextReveal>
 
             <TextReveal
@@ -69,15 +69,42 @@ export default function About() {
               className="font-body text-white/30 text-base md:text-lg leading-[1.85]"
               delay={0.25}
             >
-              My background spans systems architecture, real-time applications, and creative coding. I believe the best digital products feel inevitable — like they could not have been built any other way.
+              I&apos;ve driven digital transformation at Accenture across healthcare and enterprise systems, built clinical AI integrations at Medical Informatics Engineering, and engineered everything from GraphQL APIs with sub-100ms response times to accessible component libraries meeting WCAG 2.1 AA standards. I think in systems, ship in sprints, and obsess over the details that separate good software from great.
             </TextReveal>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-10 pt-12 border-t border-white/[0.04]">
+              <TextReveal as="div" delay={0.3}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">Languages</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">Java, Go, JavaScript, TypeScript</p>
+              </TextReveal>
+              <TextReveal as="div" delay={0.35}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">Frontend</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">React, Next.js, Redux, Tailwind CSS, Three.js</p>
+              </TextReveal>
+              <TextReveal as="div" delay={0.4}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">Backend</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">Node.js, Express, Spring Boot, GraphQL, REST APIs</p>
+              </TextReveal>
+              <TextReveal as="div" delay={0.45}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">Infrastructure</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">AWS, GCP, Docker, Kubernetes, Terraform</p>
+              </TextReveal>
+              <TextReveal as="div" delay={0.5}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">Data</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">PostgreSQL, MongoDB, Redis, DynamoDB</p>
+              </TextReveal>
+              <TextReveal as="div" delay={0.55}>
+                <span className="font-display text-xs font-medium tracking-[0.2em] uppercase text-accent/40">DevOps</span>
+                <p className="font-body text-sm text-white/30 mt-3 leading-relaxed">GitHub Actions, CI/CD, Prometheus, Git</p>
+              </TextReveal>
+            </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pt-12 border-t border-white/[0.04]">
               {[
-                { number: '5+', label: 'Years' },
-                { number: '40+', label: 'Projects' },
-                { number: '60', label: 'FPS Min' },
-                { number: '∞', label: 'Curiosity' },
+                { number: '4+', label: 'Years experience' },
+                { number: '3.8', label: 'GPA at Purdue' },
+                { number: '<100ms', label: 'API response' },
+                { number: '40%', label: 'Cost reduced' },
               ].map((stat, i) => (
                 <Stat key={stat.label} {...stat} index={i} />
               ))}
