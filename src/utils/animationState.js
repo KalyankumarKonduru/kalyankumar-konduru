@@ -1,8 +1,8 @@
 const listeners = new Map()
 
 export const animState = {
-  phase: 'loading',
-  clip: 'lookOverShoulder',
+  phase: 'sitting',
+  clip: 'sittingLaughing',
   loadProgress: 0,
   siteReady: false,
   targetSection: 'hero',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin'
 import Lenis from 'lenis'
 
 import Scene from './components/canvas/Scene'
@@ -13,7 +14,7 @@ import Projects from './components/sections/Projects'
 import Contact from './components/sections/Contact'
 import { emit, on } from './utils/animationState'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin)
 
 function ScrollProgress() {
   const barRef = useRef(null)
@@ -48,62 +49,153 @@ function ScrollProgress() {
 
 function Loader({ onComplete }) {
   const loaderRef = useRef(null)
+  const textContainerRef = useRef(null)
+  const scrambleRef = useRef(null)
+  const cursorRef = useRef(null)
+  const barTrackRef = useRef(null)
   const fillRef = useRef(null)
 
   useEffect(() => {
-    const counter = { value: 0 }
-    let lastEmitted = -1
-    let tween = null
+    let scrambleDone = false
+    let sittingDone = false
+    let scrambleTl = null
+    let cursorTl = null
+    let progressTween = null
+    let phase3Started = false
+    let jumpFallbackTimer = null
+    const unsubs = []
 
-    function startTween() {
-      tween = gsap.to(counter, {
+    function checkPhase1Complete() {
+      if (scrambleDone && sittingDone) startPhase2()
+    }
+
+    // Phase 1: ScrambleText resolving to "Loading..."
+    function startPhase1() {
+      cursorTl = gsap.timeline({ repeat: -1 })
+      cursorTl
+        .to(cursorRef.current, { opacity: 0, duration: 0.5, ease: 'none', delay: 0.2 })
+        .to(cursorRef.current, { opacity: 1, duration: 0.5, ease: 'none', delay: 0.2 })
+
+      scrambleTl = gsap.timeline()
+      scrambleTl.to(scrambleRef.current, {
+        scrambleText: {
+          text: 'Loading...',
+          chars: 'lowerCase',
+          speed: 0.4,
+        },
+        duration: 2.5,
+        ease: 'none',
+        onComplete: () => {
+          scrambleDone = true
+          checkPhase1Complete()
+        },
+      })
+    }
+
+    // Phase 2: Fade text, show bar, character jumps to bar
+    function startPhase2() {
+      cursorTl?.kill()
+      gsap.to(cursorRef.current, { opacity: 0, duration: 0.3 })
+
+      gsap.to(textContainerRef.current, {
+        opacity: 0,
+        y: -30,
+        duration: 0.8,
+        ease: 'power3.inOut',
+        onComplete: () => {
+          if (textContainerRef.current) textContainerRef.current.style.display = 'none'
+        },
+      })
+
+      gsap.to(barTrackRef.current, {
+        opacity: 1,
+        duration: 0.6,
+        ease: 'power2.inOut',
+        delay: 0.4,
+      })
+
+      emit('jumpToBar')
+
+      const unsubJump = on('jumpDone', () => {
+        unsubJump()
+        clearTimeout(jumpFallbackTimer)
+        startPhase3()
+      })
+      unsubs.push(unsubJump)
+
+      jumpFallbackTimer = setTimeout(() => startPhase3(), 2000)
+    }
+
+    // Phase 3: Progress bar fills, character runs synced to it
+    function startPhase3() {
+      if (phase3Started) return
+      phase3Started = true
+
+      const counter = { value: 0 }
+      let lastEmitted = -1
+
+      progressTween = gsap.to(counter, {
         value: 100,
         duration: 2.5,
         ease: 'linear',
         onUpdate: () => {
           const raw = counter.value
           const rounded = Math.round(raw)
-
-          // Direct DOM write — zero React re-renders, GPU composited
           if (fillRef.current) fillRef.current.style.transform = `scaleX(${raw / 100})`
-
-          // Only emit on integer change — no event bus hammering
           if (rounded !== lastEmitted) {
             lastEmitted = rounded
             emit('loadProgress', rounded)
           }
         },
-        onComplete: () => {
-          gsap.to(loaderRef.current, {
-            yPercent: -100,
-            duration: 0.9,
-            ease: 'power4.inOut',
-            delay: 0.2,
-            onComplete,
-          })
-        },
+        onComplete: startPhase4,
       })
     }
 
-    // Wait for Character FBX parsing to finish before animating,
-    // so the stutter from model parsing doesn't hit mid-tween.
-    // Fall back to immediate start after 6 s in case the event never fires.
-    const fallback = setTimeout(startTween, 6000)
-    const unsub = on('characterReady', () => {
+    // Phase 4: Smooth fade-out
+    function startPhase4() {
+      gsap.to(loaderRef.current, {
+        opacity: 0,
+        yPercent: -5,
+        duration: 0.9,
+        ease: 'power4.inOut',
+        delay: 0.3,
+        onComplete,
+      })
+    }
+
+    // Wait for character FBX parsing before starting Phase 1
+    const fallback = setTimeout(startPhase1, 6000)
+    const unsubReady = on('characterReady', () => {
       clearTimeout(fallback)
-      startTween()
+      startPhase1()
+    })
+
+    const unsubSitting = on('sittingDone', () => {
+      sittingDone = true
+      checkPhase1Complete()
     })
 
     return () => {
       clearTimeout(fallback)
-      unsub()
-      tween?.kill()
+      clearTimeout(jumpFallbackTimer)
+      unsubReady()
+      unsubSitting()
+      unsubs.forEach((u) => u())
+      scrambleTl?.kill()
+      cursorTl?.kill()
+      progressTween?.kill()
     }
   }, [onComplete])
 
   return (
     <div ref={loaderRef} className="loader">
-      <div className="loader-bar-track">
+      <div ref={textContainerRef} className="loader-scramble-container">
+        <p className="loader-scramble-text">
+          <span ref={scrambleRef}></span>
+          <span ref={cursorRef} className="loader-scramble-cursor">|</span>
+        </p>
+      </div>
+      <div ref={barTrackRef} className="loader-bar-track" style={{ opacity: 0 }}>
         <div ref={fillRef} className="loader-bar-fill" />
       </div>
     </div>

@@ -13,6 +13,7 @@ const CLIP_FILES = {
   swinging: 'swinging.fbx',
   crouchToStand: 'crouch-to-stand.fbx',
   changeDirection: 'change-direction.fbx',
+  sittingLaughing: 'Sitting Laughing.fbx',
 }
 
 const SECTION_POS = {
@@ -35,6 +36,10 @@ const SECTION_ORDER = { hero: 0, about: 1, projects: 2, contact: 3 }
 const CROSSFADE_DURATION = 0.4
 const CHARACTER_SCALE = 0.012
 
+// Sitting position (centered on screen, above "Loading..." text)
+const SITTING_POS = new THREE.Vector3(0, -0.3, 1.0)
+const SITTING_ROT_Y = 0 // Facing camera
+
 // Loading path: below the centre sphere (y=-2.0) and in front of it (z=1.0)
 const LOAD_Y = -2.0
 const LOAD_Z = 1.0
@@ -50,6 +55,9 @@ export default function Character() {
   const swingEnd = useRef(new THREE.Vector3())
   const swingProgress = useRef(0)
   const swingActive = useRef(false)
+  const jumpProgress = useRef(0)
+  const jumpStart = useRef(new THREE.Vector3())
+  const jumpEnd = useRef(new THREE.Vector3())
   const swingType = useRef('forward') // 'forward' = arc swing | 'backward' = flat run
   const prevSection = useRef('hero')
   const prevLoadProgress = useRef(0)
@@ -70,10 +78,10 @@ export default function Character() {
       if (fbx.animations && fbx.animations.length > 0) {
         const clip = fbx.animations[0].clone()
         clip.name = names[i]
-        // Strip all position tracks (root motion) — only rotation drives the animation.
-        // Mixamo FBX embeds forward translation on the Hips bone; removing it keeps
-        // the character in-place so our code is the sole driver of world position.
-        clip.tracks = clip.tracks.filter(track => !track.name.endsWith('.position'))
+        // Keep position tracks for sitting animation (needed for proper sitting pose)
+        if (names[i] !== 'sittingLaughing') {
+          clip.tracks = clip.tracks.filter(track => !track.name.endsWith('.position'))
+        }
         clipMap[names[i]] = clip
       }
     })
@@ -114,12 +122,14 @@ export default function Character() {
     })
     actionsRef.current = actions
 
-    // Start running immediately so Luffy runs across during loading
-    if (actions.running) {
-      actions.running.setLoop(THREE.LoopRepeat)
-      actions.running.play()
-      currentAction.current = actions.running
-      animState.clip = 'running'
+    // Start with sitting laughing animation (plays once during Phase 1)
+    if (actions.sittingLaughing) {
+      actions.sittingLaughing.setLoop(THREE.LoopOnce, 1)
+      actions.sittingLaughing.clampWhenFinished = true
+      actions.sittingLaughing.play()
+      currentAction.current = actions.sittingLaughing
+      animState.clip = 'sittingLaughing'
+      animState.phase = 'sitting'
     }
 
     modelReady.current = true
@@ -127,6 +137,11 @@ export default function Character() {
 
     function handleFinished(e) {
       const clipName = e.action.getClip().name
+
+      if (clipName === 'sittingLaughing') {
+        // Stay clamped at last frame, signal Phase 1 complete
+        emit('sittingDone')
+      }
 
       if (clipName === 'kneelingPointing') {
         // Entrance: land with crouchToStand instead of running to position
@@ -201,7 +216,14 @@ export default function Character() {
       animState.loadProgress = p
     })
 
-    return () => { unsubReady(); unsubProgress() }
+    const unsubJump = on('jumpToBar', () => {
+      animState.phase = 'jumping'
+      jumpProgress.current = 0
+      jumpStart.current.copy(groupRef.current.position)
+      jumpEnd.current.set(-3.5, LOAD_Y, LOAD_Z)
+    })
+
+    return () => { unsubReady(); unsubProgress(); unsubJump() }
   }, [])
 
   function crossFadeTo(name, duration = CROSSFADE_DURATION) {
@@ -248,92 +270,116 @@ export default function Character() {
 
     const section = scroll.section || 'hero'
 
-    // Detect section change and direction
-    if (
-      section !== prevSection.current &&
-      animState.phase !== 'loading' &&
-      animState.phase !== 'heroEntrance' &&
-      animState.phase !== 'heroLanding' &&
-      animState.phase !== 'swinging' &&
-      !swingActive.current
-    ) {
-      const fromIdx = SECTION_ORDER[prevSection.current] ?? 0
-      const toIdx = SECTION_ORDER[section] ?? 0
-      const isBackward = toIdx < fromIdx
-      prevSection.current = section
-      triggerMovement(section, isBackward ? 'backward' : 'forward')
-    }
+    // Phase 1: Hold at sitting position, facing camera
+    if (animState.phase === 'sitting') {
+      groupRef.current.position.set(SITTING_POS.x, SITTING_POS.y, SITTING_POS.z)
+      smoothRotY.current = SITTING_ROT_Y
 
-    // Movement arc / flat run
-    if (swingActive.current) {
-      swingProgress.current += delta * 0.7
-      const t = Math.min(1, swingProgress.current)
-      const easedT = t * t * (3 - 2 * t)
+    // Phase 2: Parabolic jump from text down to progress bar
+    } else if (animState.phase === 'jumping') {
+      jumpProgress.current += delta * 1.2 // ~0.83s total
+      const t = Math.min(1, jumpProgress.current)
+      const easedT = t * t * (3 - 2 * t) // smoothstep
 
-      const pos = _pos.current.lerpVectors(swingStart.current, swingEnd.current, easedT)
-
-      if (swingType.current === 'forward') {
-        // Parabolic arc upward for swing
-        pos.y += Math.sin(easedT * Math.PI) * 1.5
-      }
-      // backward: flat path — no arc added
-
+      const pos = _pos.current.lerpVectors(jumpStart.current, jumpEnd.current, easedT)
+      // Parabolic arc — rises then falls
+      pos.y += Math.sin(easedT * Math.PI) * 1.2
       groupRef.current.position.copy(pos)
 
-      const dir = swingEnd.current.x - swingStart.current.x
-      const targetRotY = dir >= 0 ? 0.5 : -0.5
-      smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, targetRotY, 0.06)
+      // Rotate from facing camera to facing right during jump
+      smoothRotY.current = THREE.MathUtils.lerp(SITTING_ROT_Y, Math.PI / 2, easedT)
 
       if (t >= 1) {
-        swingActive.current = false
-        groupRef.current.position.copy(swingEnd.current)
+        groupRef.current.position.copy(jumpEnd.current)
+        animState.phase = 'loading'
+        crossFadeTo('running')
+        actionsRef.current.running?.setLoop(THREE.LoopRepeat)
+        animState.clip = 'running'
+        prevLoadProgress.current = 0
+        emit('jumpDone')
       }
 
-    } else if (animState.phase === 'idle') {
-      const target = SECTION_POS[section] || SECTION_POS.hero
-      groupRef.current.position.lerp(target, 0.025)
-      const targetRot = SECTION_ROT_Y[section] ?? 0
-      smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, targetRot, 0.025)
+    } else {
+      // Post-jump phases: detect section changes
+      if (
+        section !== prevSection.current &&
+        animState.phase !== 'loading' &&
+        animState.phase !== 'heroEntrance' &&
+        animState.phase !== 'heroLanding' &&
+        animState.phase !== 'swinging' &&
+        !swingActive.current
+      ) {
+        const fromIdx = SECTION_ORDER[prevSection.current] ?? 0
+        const toIdx = SECTION_ORDER[section] ?? 0
+        const isBackward = toIdx < fromIdx
+        prevSection.current = section
+        triggerMovement(section, isBackward ? 'backward' : 'forward')
+      }
 
-    } else if (animState.phase === 'loading') {
-      // Position locked 1:1 with progress — no lag
-      const t = animState.loadProgress / 100
-      groupRef.current.position.x = THREE.MathUtils.lerp(-3.5, 3.5, t)
-      groupRef.current.position.y = LOAD_Y
-      groupRef.current.position.z = LOAD_Z
-      // Snap rotation immediately — no lerp so it never passes through camera-facing
-      smoothRotY.current = Math.PI / 2
+      // Movement arc / flat run
+      if (swingActive.current) {
+        swingProgress.current += delta * 0.7
+        const t = Math.min(1, swingProgress.current)
+        const easedT = t * t * (3 - 2 * t)
 
-      // Tie animation speed to how fast progress is moving this frame.
-      // At the average fill rate (100% over 5s = 20%/s), timeScale = 1.
-      // Progress slows → legs slow. Progress pauses → legs stop.
-      const dp = animState.loadProgress - prevLoadProgress.current
-      prevLoadProgress.current = animState.loadProgress
-      const safeDelta = Math.max(delta, 0.001)
-      const loadTimeScale = dp > 0 ? Math.min(dp / (safeDelta * 20), 3) : 0
-      currentAction.current?.setEffectiveTimeScale(loadTimeScale)
+        const pos = _pos.current.lerpVectors(swingStart.current, swingEnd.current, easedT)
 
-    } else if (animState.phase === 'heroEntrance') {
-      // Hold at right side while kneelingPointing plays
-      groupRef.current.position.lerp(new THREE.Vector3(3, -1.6, 0.5), 0.03)
-      smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, -0.8, 0.03)
+        if (swingType.current === 'forward') {
+          pos.y += Math.sin(easedT * Math.PI) * 1.5
+        }
 
-    } else if (animState.phase === 'heroLanding') {
-      // Drift to hero position while crouchToStand plays
-      groupRef.current.position.lerp(SECTION_POS.hero, 0.03)
-      smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, SECTION_ROT_Y.hero, 0.03)
+        groupRef.current.position.copy(pos)
+
+        const dir = swingEnd.current.x - swingStart.current.x
+        const targetRotY = dir >= 0 ? 0.5 : -0.5
+        smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, targetRotY, 0.06)
+
+        if (t >= 1) {
+          swingActive.current = false
+          groupRef.current.position.copy(swingEnd.current)
+        }
+
+      } else if (animState.phase === 'idle') {
+        const target = SECTION_POS[section] || SECTION_POS.hero
+        groupRef.current.position.lerp(target, 0.025)
+        const targetRot = SECTION_ROT_Y[section] ?? 0
+        smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, targetRot, 0.025)
+
+      } else if (animState.phase === 'loading') {
+        // Position locked 1:1 with progress — no lag
+        const t = animState.loadProgress / 100
+        groupRef.current.position.x = THREE.MathUtils.lerp(-3.5, 3.5, t)
+        groupRef.current.position.y = LOAD_Y
+        groupRef.current.position.z = LOAD_Z
+        smoothRotY.current = Math.PI / 2
+
+        // Tie animation speed to progress delta
+        const dp = animState.loadProgress - prevLoadProgress.current
+        prevLoadProgress.current = animState.loadProgress
+        const safeDelta = Math.max(delta, 0.001)
+        const loadTimeScale = dp > 0 ? Math.min(dp / (safeDelta * 20), 3) : 0
+        currentAction.current?.setEffectiveTimeScale(loadTimeScale)
+
+      } else if (animState.phase === 'heroEntrance') {
+        groupRef.current.position.lerp(new THREE.Vector3(3, -1.6, 0.5), 0.03)
+        smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, -0.8, 0.03)
+
+      } else if (animState.phase === 'heroLanding') {
+        groupRef.current.position.lerp(SECTION_POS.hero, 0.03)
+        smoothRotY.current = THREE.MathUtils.lerp(smoothRotY.current, SECTION_ROT_Y.hero, 0.03)
+      }
     }
 
     groupRef.current.rotation.y = smoothRotY.current
 
-    // Subtle idle bounce (not during active movement)
-    if (!swingActive.current) {
+    // Subtle idle bounce (not during sitting, jumping, or active swing)
+    if (!swingActive.current && animState.phase !== 'sitting' && animState.phase !== 'jumping') {
       groupRef.current.position.y += Math.sin(state.clock.elapsedTime * 2) * 0.005
     }
   })
 
   return (
-    <group ref={groupRef} scale={CHARACTER_SCALE} position={[-3.5, LOAD_Y, LOAD_Z]} rotation={[0, Math.PI / 2, 0]}>
+    <group ref={groupRef} scale={CHARACTER_SCALE} position={[SITTING_POS.x, SITTING_POS.y, SITTING_POS.z]} rotation={[0, SITTING_ROT_Y, 0]}>
       <primitive object={model} />
     </group>
   )
