@@ -3,7 +3,6 @@ import { Canvas } from '@react-three/fiber'
 import { Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
-import FloatingGeometry from './FloatingGeometry'
 import ParticleField from './ParticleField'
 import Character from './Character'
 
@@ -28,7 +27,6 @@ export default function Scene({ siteReady }) {
           <pointLight position={[0, 3, 4]} intensity={0.8} color="#d4b88e" />
           <pointLight position={[-3, 1, 3]} intensity={0.4} color="#c8a87c" />
 
-          {siteReady && <FloatingGeometry />}
           {siteReady && <ParticleField count={1200} />}
           <Character />
 
