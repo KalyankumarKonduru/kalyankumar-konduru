@@ -5,7 +5,7 @@ export const scroll = {
   sectionProgress: 0,
 }
 
-const SECTIONS = ['hero', 'about', 'projects', 'contact']
+const SECTIONS = ['hero', 'about', 'experience', 'projects', 'contact']
 
 // Cache element references — queried once on first scroll, not on every tick
 let cachedEls = null

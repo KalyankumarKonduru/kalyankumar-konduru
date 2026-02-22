@@ -163,3 +163,20 @@
 .reveal-up.revealed {
   clip-path: inset(0 0 0 0);
 }
+
+/* Experience: Sphere pulse aura */
+@keyframes sphere-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+}
+
+.animate-sphere-pulse {
+  animation: sphere-pulse 3s ease-in-out infinite;
+  will-change: transform, opacity;
+}

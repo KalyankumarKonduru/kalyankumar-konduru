@@ -4,7 +4,7 @@ import { Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import ParticleField from './ParticleField'
-import Character from './Character'
+import Character from './character'
 
 export default function Scene({ siteReady }) {
   return (
