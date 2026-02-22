@@ -3,7 +3,14 @@
     "allow": [
       "Bash(find:*)",
       "Bash(lsof:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm ls:*)",
+      "Bash(node -e:*)",
+      "Bash(npm install:*)",
+      "Bash(npx facetype@latest:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:localhost)"
     ]
   }
 }

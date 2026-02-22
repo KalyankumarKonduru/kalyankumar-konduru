@@ -3,8 +3,10 @@ import { Canvas } from '@react-three/fiber'
 import { Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
+import { Physics } from '@react-three/rapier'
 import ParticleField from './ParticleField'
 import Character from './character'
+import PhysicsText from './PhysicsText'
 
 export default function Scene({ siteReady }) {
   return (
@@ -20,15 +22,18 @@ export default function Scene({ siteReady }) {
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={1.2} />
-          <directionalLight position={[5, 5, 5]} intensity={1.2} color="#c8a87c" />
-          <directionalLight position={[-5, -3, 2]} intensity={0.4} color="#4a3728" />
-          <directionalLight position={[0, 2, 6]} intensity={1.0} color="#ffffff" />
-          <pointLight position={[0, 3, 4]} intensity={0.8} color="#d4b88e" />
-          <pointLight position={[-3, 1, 3]} intensity={0.4} color="#c8a87c" />
+          <Physics gravity={[0, -9.81, 0]} timeStep="vary">
+            <ambientLight intensity={1.2} />
+            <directionalLight position={[5, 5, 5]} intensity={1.2} color="#c8a87c" />
+            <directionalLight position={[-5, -3, 2]} intensity={0.4} color="#4a3728" />
+            <directionalLight position={[0, 2, 6]} intensity={1.0} color="#ffffff" />
+            <pointLight position={[0, 3, 4]} intensity={0.8} color="#d4b88e" />
+            <pointLight position={[-3, 1, 3]} intensity={0.4} color="#c8a87c" />
 
-          {siteReady && <ParticleField count={1200} />}
-          <Character />
+            {siteReady && <ParticleField count={1200} />}
+            <Character />
+            <PhysicsText />
+          </Physics>
 
           <EffectComposer multisampling={0}>
             <Bloom

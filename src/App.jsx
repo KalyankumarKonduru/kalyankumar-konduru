@@ -160,7 +160,14 @@ function Loader({ onComplete }) {
         duration: 0.9,
         ease: 'power4.inOut',
         delay: 0.3,
-        onComplete,
+        onComplete() {
+          // Disable pointer-events so invisible loader doesn't block clicks
+          if (loaderRef.current) {
+            loaderRef.current.style.pointerEvents = 'none'
+            loaderRef.current.style.display = 'none'
+          }
+          onComplete()
+        },
       })
     }
 
