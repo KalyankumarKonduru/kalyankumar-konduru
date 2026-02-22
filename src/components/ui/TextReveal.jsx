@@ -37,9 +37,14 @@ export default function TextReveal({
   }, [delay, stagger, triggerStart])
 
   const splitText = typeof children === 'string'
-    ? children.split(' ').map((word, i) => (
-        <span key={i} className="inline-block overflow-hidden">
-          <span className="word-inner char inline-block">{word}&nbsp;</span>
+    ? children.split(' ').map((word, wi) => (
+        <span key={wi} className="word-wrap inline-block overflow-hidden">
+          <span className="word-inner inline-block">
+            {word.split('').map((ch, ci) => (
+              <span key={ci} className="char inline-block">{ch}</span>
+            ))}
+          </span>
+          {'\u00A0'}
         </span>
       ))
     : children

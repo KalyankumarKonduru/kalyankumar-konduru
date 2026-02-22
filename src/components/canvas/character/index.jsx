@@ -2,8 +2,7 @@ import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { RigidBody, BallCollider, interactionGroups } from '@react-three/rapier'
-import { animState, emit, on } from '../../../utils/animationState'
+import { animState, emit, on, characterScreen } from '../../../utils/animationState'
 import { scroll } from '../../../utils/scrollTracker'
 import {
   FBX_BASE, CLIP_FILES, SECTION_ORDER, CROSSFADE_DURATION,
@@ -16,7 +15,6 @@ import * as experiencePhase from './phases/experience'
 
 export default function Character() {
   const groupRef = useRef()
-  const physicsRef = useRef()
   const mixerRef = useRef(null)
   const actionsRef = useRef({})
   const currentAction = useRef(null)
@@ -199,21 +197,9 @@ export default function Character() {
         } else if (prevSection.current === 'experience') {
           prevSection.current = section
           experiencePhase.triggerExit(ctx, section, isBackward)
-          emit('swingTransition', {
-            from: 'experience',
-            to: section,
-            start: swingStart.current.clone(),
-            end: swingEnd.current.clone(),
-          })
         } else {
           prevSection.current = section
           movementPhase.trigger(ctx, section, isBackward ? 'backward' : 'forward')
-          emit('swingTransition', {
-            from: prevSection.current,
-            to: section,
-            start: swingStart.current.clone(),
-            end: swingEnd.current.clone(),
-          })
         }
       }
 
@@ -229,6 +215,14 @@ export default function Character() {
 
     groupRef.current.rotation.y = smoothRotY.current
 
+    // Project character position to screen coordinates for DOM text interaction
+    const worldPos = new THREE.Vector3()
+    groupRef.current.getWorldPosition(worldPos)
+    const projected = worldPos.clone().project(state.camera)
+    characterScreen.x = (projected.x * 0.5 + 0.5) * state.gl.domElement.clientWidth
+    characterScreen.y = (-projected.y * 0.5 + 0.5) * state.gl.domElement.clientHeight
+    characterScreen.moving = swingActive.current || phase === 'experienceEntry' || phase === 'swinging' || phase === 'heroEntrance' || phase === 'heroLanding'
+
     // Subtle idle bounce (not during sitting, jumping, experience, or active swing)
     if (
       !swingActive.current &&
@@ -240,28 +234,11 @@ export default function Character() {
       groupRef.current.position.y += Math.sin(state.clock.elapsedTime * 2) * 0.005
     }
 
-    // Sync invisible physics collider to character position
-    if (physicsRef.current) {
-      const p = groupRef.current.position
-      physicsRef.current.setNextKinematicTranslation({ x: p.x, y: p.y, z: p.z })
-    }
   })
 
   return (
-    <>
-      {/* Invisible physics collider — follows character position for letter collisions */}
-      <RigidBody
-        ref={physicsRef}
-        type="kinematicPosition"
-        colliders={false}
-        position={[SITTING_POS.x, SITTING_POS.y, SITTING_POS.z]}
-      >
-        <BallCollider args={[0.3]} collisionGroups={interactionGroups(0, [1])} />
-      </RigidBody>
-
-      <group ref={groupRef} scale={CHARACTER_SCALE} position={[SITTING_POS.x, SITTING_POS.y, SITTING_POS.z]} rotation={[0, SITTING_ROT_Y, 0]}>
-        <primitive object={model} />
-      </group>
-    </>
+    <group ref={groupRef} scale={CHARACTER_SCALE} position={[SITTING_POS.x, SITTING_POS.y, SITTING_POS.z]} rotation={[0, SITTING_ROT_Y, 0]}>
+      <primitive object={model} />
+    </group>
   )
 }

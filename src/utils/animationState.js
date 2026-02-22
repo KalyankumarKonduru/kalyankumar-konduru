@@ -20,3 +20,6 @@ export function on(event, cb) {
   listeners.get(event).add(cb)
   return () => listeners.get(event).delete(cb)
 }
+
+// Character's projected screen position (updated every frame by Character component)
+export const characterScreen = { x: -9999, y: -9999, moving: false }
