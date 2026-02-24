@@ -2,7 +2,7 @@ import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { animState, emit, on, characterScreen } from '../../../utils/animationState'
+import { animState, emit, on, characterScreen, characterWorldPos } from '../../../utils/animationState'
 import { scroll } from '../../../utils/scrollTracker'
 import {
   FBX_BASE, CLIP_FILES, SECTION_ORDER, CROSSFADE_DURATION,
@@ -156,7 +156,21 @@ export default function Character() {
       animState.phase = 'jumping'
       jumpProgress.current = 0
       jumpStart.current.copy(groupRef.current.position)
-      jumpEnd.current.set(-3.5, LOAD_Y, LOAD_Z)
+
+      // Compute jump target Y from the actual DOM bar position
+      let barY = LOAD_Y
+      const barEl = document.querySelector('.loader-bar-track')
+      const canvas = document.querySelector('canvas')
+      if (barEl && canvas) {
+        const rect = barEl.getBoundingClientRect()
+        const cH = canvas.clientHeight
+        const ndcY = -(rect.top / cH) * 2 + 1
+        // Camera: position.z=6, FOV=50, targetZ=LOAD_Z
+        const dist = 6 - LOAD_Z
+        const halfH = Math.tan((50 * Math.PI / 180) / 2) * dist
+        barY = ndcY * halfH
+      }
+      jumpEnd.current.set(-3.5, barY, LOAD_Z)
     })
 
     return () => { unsubReady(); unsubProgress(); unsubJump() }
@@ -221,7 +235,14 @@ export default function Character() {
     const projected = worldPos.clone().project(state.camera)
     characterScreen.x = (projected.x * 0.5 + 0.5) * state.gl.domElement.clientWidth
     characterScreen.y = (-projected.y * 0.5 + 0.5) * state.gl.domElement.clientHeight
-    characterScreen.moving = swingActive.current || phase === 'experienceEntry' || phase === 'swinging' || phase === 'heroEntrance' || phase === 'heroLanding'
+    // Active for text interaction whenever the character is visible and post-load.
+    // During sitting/jumping/loading (pre-site), character isn't in a section yet.
+    characterScreen.moving = phase !== 'sitting' && phase !== 'jumping' && phase !== 'loading'
+
+    // Expose 3D world position for TextProxies invisible collider system
+    characterWorldPos.x = worldPos.x
+    characterWorldPos.y = worldPos.y
+    characterWorldPos.z = worldPos.z
 
     // Subtle idle bounce (not during sitting, jumping, experience, or active swing)
     if (

@@ -23,3 +23,7 @@ export function on(event, cb) {
 
 // Character's projected screen position (updated every frame by Character component)
 export const characterScreen = { x: -9999, y: -9999, moving: false }
+
+// Character's 3D world position (updated every frame by Character component)
+// Used by TextProxies for invisible collider AABB checks
+export const characterWorldPos = { x: -9999, y: -9999, z: -9999 }

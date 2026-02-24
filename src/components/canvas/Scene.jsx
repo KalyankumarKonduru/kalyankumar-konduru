@@ -5,6 +5,7 @@ import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postpro
 import { BlendFunction } from 'postprocessing'
 import ParticleField from './ParticleField'
 import Character from './character'
+import TextProxies from './TextProxies'
 
 export default function Scene({ siteReady }) {
   return (
@@ -29,6 +30,9 @@ export default function Scene({ siteReady }) {
 
           {siteReady && <ParticleField count={1200} />}
           <Character />
+
+          {/* Invisible proxy meshes synced to DOM text positions + raycasting */}
+          {siteReady && <TextProxies />}
 
           <EffectComposer multisampling={0}>
             <Bloom

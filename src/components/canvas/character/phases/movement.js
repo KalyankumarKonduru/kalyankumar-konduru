@@ -28,11 +28,15 @@ export function trigger(ctx, toSection, type = 'forward') {
   animState.phase = 'swinging'
 }
 
+// Track whether swingTransition was already emitted this swing
+let midpointEmitted = false
+
 export function update(ctx, _state, delta, section) {
   const { groupRef, swingActive, swingProgress, swingType, swingStart,
     swingEnd, smoothRotY, _pos } = ctx
 
   if (swingActive.current) {
+    const prevT = swingProgress.current
     swingProgress.current += delta * 0.7
     const t = Math.min(1, swingProgress.current)
     const easedT = t * t * (3 - 2 * t)
@@ -42,6 +46,16 @@ export function update(ctx, _state, delta, section) {
       pos.y += Math.sin(easedT * Math.PI) * 1.5
     }
     groupRef.current.position.copy(pos)
+
+    // Emit swingTransition at the arc midpoint — triggers PhysicsText letter spawning
+    if (prevT < 0.5 && t >= 0.5 && !midpointEmitted) {
+      midpointEmitted = true
+      emit('swingTransition', {
+        to: animState.landingSection,
+        start: swingStart.current.clone(),
+        end: swingEnd.current.clone(),
+      })
+    }
 
     const dir = swingEnd.current.x - swingStart.current.x
     const targetRotY = dir >= 0 ? 0.5 : -0.5
@@ -55,6 +69,7 @@ export function update(ctx, _state, delta, section) {
 
     if (t >= 1) {
       swingActive.current = false
+      midpointEmitted = false
       groupRef.current.position.copy(swingEnd.current)
     }
 
